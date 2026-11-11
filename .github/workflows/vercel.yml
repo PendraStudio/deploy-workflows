@@ -1,0 +1,66 @@
+# Centrale Vercel-deploy voor alle PendraStudio-sites.
+# Push naar de productie-branch => productie, elke andere branch => preview.
+name: Vercel deploy (centraal)
+
+on:
+  workflow_call:
+    inputs:
+      project-id:
+        description: "Vercel Project ID (repo-variabele VERCEL_PROJECT_ID)"
+        required: true
+        type: string
+      production-branch:
+        required: false
+        type: string
+        default: main
+      node-version:
+        required: false
+        type: string
+        default: "22"
+    secrets:
+      VERCEL_TOKEN:
+        required: true
+      VERCEL_ORG_ID:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: vercel-${{ github.repository }}-${{ github.ref }}
+      cancel-in-progress: true
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ inputs.project-id }}
+      TARGET: ${{ github.ref_name == inputs.production-branch && 'production' || 'preview' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Vercel CLI installeren
+        run: npm i -g vercel@latest
+
+      - name: Instellingen en env vars ophalen
+        run: vercel pull --yes --environment=$TARGET --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        run: |
+          if [ "$TARGET" = "production" ]; then
+            vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+          else
+            vercel build --token=${{ secrets.VERCEL_TOKEN }}
+          fi
+
+      - name: Deploy
+        id: deploy
+        run: |
+          if [ "$TARGET" = "production" ]; then
+            URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          else
+            URL=$(vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }})
+          fi
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "### Deployed ($TARGET): $URL" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,13 @@
+# Zet dit bestand in elke site-repo.
+# Vereist: repo-variabele VERCEL_PROJECT_ID (Settings > Secrets and variables > Actions > Variables).
+name: Deploy
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    uses: PendraStudio/deploy-workflows/.github/workflows/vercel.yml@main
+    with:
+      project-id: ${{ vars.VERCEL_PROJECT_ID }}
+    secrets: inherit
