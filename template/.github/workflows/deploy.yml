@@ -1,8 +1,11 @@
 # Zet dit bestand in elke site-repo.
-# Vereist: repo-variabele VERCEL_PROJECT_ID (Settings > Secrets and variables > Actions > Variables).
+# Vereist: repo-variabele VERCEL_PROJECT_ID en secrets VERCEL_TOKEN + VERCEL_ORG_ID (scripts/set-secrets.sh).
+# main = live. Preview = open een pull request. Handmatig: Actions > Deploy > Run workflow.
 name: Deploy
 on:
   push:
+    branches: [main]
+  pull_request:
   workflow_dispatch:
 
 jobs:

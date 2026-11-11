@@ -1,5 +1,5 @@
 # Centrale Vercel-deploy voor alle PendraStudio-sites.
-# Push naar de productie-branch => productie, elke andere branch => preview.
+# main => productie, pull request => preview. Gewone branch-pushes bouwen niet (spaart Actions-minuten).
 name: Vercel deploy (centraal)
 
 on:
@@ -40,8 +40,18 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
 
+      - name: Cache (npm + Vercel CLI)
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/pnpm
+            ~/.bun/install/cache
+          key: deps-${{ runner.os }}-${{ hashFiles('**/package-lock.json', '**/pnpm-lock.yaml', '**/yarn.lock', '**/bun.lockb', '**/bun.lock') }}
+          restore-keys: deps-${{ runner.os }}-
+
       - name: Vercel CLI installeren
-        run: npm i -g vercel@latest
+        run: npm i -g vercel@latest --prefer-offline --no-audit --no-fund
 
       - name: Instellingen en env vars ophalen
         run: vercel pull --yes --environment=$TARGET --token=${{ secrets.VERCEL_TOKEN }}
