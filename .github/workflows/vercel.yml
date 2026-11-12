@@ -26,6 +26,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # Toont de deploy als "Preview"/"Production" met link in de PR en op de repo-pagina (net als de Vercel Git-koppeling)
+    environment:
+      name: ${{ github.ref_name == inputs.production-branch && 'Production' || 'Preview' }}
+      url: ${{ steps.deploy.outputs.url }}
     concurrency:
       group: vercel-${{ github.repository }}-${{ github.ref }}
       cancel-in-progress: true
@@ -74,3 +78,16 @@ jobs:
           fi
           echo "url=$URL" >> "$GITHUB_OUTPUT"
           echo "### Deployed ($TARGET): $URL" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Preview-link in de pull request
+        if: github.event_name == 'pull_request'
+        continue-on-error: true   # werkt alleen als de repo 'pull-requests: write' geeft (zie template)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          URL: ${{ steps.deploy.outputs.url }}
+          PR: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          BODY=$(printf '**Preview klaar** ▲\n\n%s\n\n<sub>commit %s · deploy via PendraHQ</sub>' "$URL" "${SHA:0:7}")
+          gh pr comment "$PR" -R "$GITHUB_REPOSITORY" --edit-last --body "$BODY" 2>/dev/null \
+            || gh pr comment "$PR" -R "$GITHUB_REPOSITORY" --body "$BODY"
