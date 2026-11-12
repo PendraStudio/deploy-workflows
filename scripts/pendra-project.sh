@@ -101,6 +101,12 @@ else
   git push -q origin "$BRANCH" && ok "toegevoegd en gepusht (zonder deploy)"
 fi
 
+# ---------- CLAUDE.md voor live- ----------
+case "$NAME" in live-*)
+  bash "$(dirname "$(readlink "$0" || echo "$0")")/pendra-claudemd.sh" "$NAME"
+  git pull -q --ff-only origin "$BRANCH" 2>/dev/null || echo "  ! haal CLAUDE.md lokaal binnen met: git pull";;
+esac
+
 # ---------- preview ----------
 if [ "$PREVIEW" = 1 ]; then
   say "Preview-deploy"

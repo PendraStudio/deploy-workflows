@@ -72,6 +72,7 @@ if [ -n "$REPO" ]; then
         -f content="$CONTENT" -f branch="$DEF" >/dev/null 2>&1 && break; sleep 6; done
   fi
   ok "deploy-bestand op $DEF (niets live gezet)"
+  bash "$(dirname "$(readlink "$0" || echo "$0")")/pendra-claudemd.sh" "$NEW"
 else
   warn "geen GitHub-repo gekoppeld; later toevoegen met: pendra-project $NEW"
 fi
