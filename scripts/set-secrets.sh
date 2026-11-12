@@ -13,8 +13,15 @@ if [ $# -gt 0 ]; then REPOS=("$@"); else
 fi
 if [ -z "${REPOS[*]:-}" ]; then echo "Geen repo's opgegeven (vul scripts/repos.txt)."; exit 1; fi
 
+TOKEN=$(security find-generic-password -s pendrahq-vercel-token -w 2>/dev/null || true)
+if [ -n "$TOKEN" ]; then echo "Token gevonden in je sleutelhanger."; else
 read -rsp "Plak VERCEL_TOKEN (niet zichtbaar): " TOKEN; echo
-read -rp  "VERCEL_ORG_ID (Team ID): " ORGID
+TOKEN="$(printf '%s' "$TOKEN" | tr -d '[:space:]')"
+echo "Token is ${#TOKEN} tekens lang, begint met '${TOKEN:0:4}' en eindigt op '${TOKEN: -4}'."
+echo "Vergelijk met je token: staat het begin er nog een keer middenin, dan is hij dubbel geplakt."
+read -rp "Klopt dat? (j/n) " OK; [ "$OK" = "j" ] || { echo "Gestopt."; exit 1; }
+fi
+ORGID="team_hpzeMXxEof0JVAjm1VgEasR5"
 
 for r in "${REPOS[@]}"; do
   printf '%s' "$TOKEN" | gh secret set VERCEL_TOKEN  -R "$ORG/$r" >/dev/null \
