@@ -9,7 +9,7 @@ description: Pendra-workflow voor GitHub (PendraStudio) en Vercel (team pendra-h
 - Code: GitHub-org `PendraStudio`. Iedereen commit/pusht met zijn **eigen** GitHub-account (identiteit + geschiedenis).
 - Sites: Vercel-team `pendra-hq` (slug), id `team_hpzeMXxEof0JVAjm1VgEasR5`. **Eén betaalde seat**; gedeelde login `info@pendra.studio` (CLI-user `pendrahq`).
 - Deploy: elke repo heeft `.github/workflows/deploy.yml` → reusable workflow `PendraStudio/deploy-workflows` → `vercel build/deploy --prebuilt` met secret `VERCEL_TOKEN` (PendraHQ-token), `VERCEL_ORG_ID`, repo-variabele `VERCEL_PROJECT_ID`.
-  - push naar branch / PR = **preview**; push/merge naar `main` (of de ingestelde production-branch) = **productie**.
+  - pull request openen/updaten = **preview** (link komt als reactie in de PR + als 'Preview'-environment); push/merge naar `main` (of de ingestelde production-branch) = **productie**. Een losse branch-push zonder PR bouwt niets (spaart minuten); snel een link zonder PR: `vercel deploy`.
 - Vercel ziet alleen de token → geen extra seats, ongeacht wie pusht.
 
 ## Commando's (staan in ~/.local/bin, bron: ~/pendra-tools of de deploy-workflows-clone)
