@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pendra-check: vraagt bevestiging bij een push naar main/master van een PendraStudio-repo.
+# Pendra-check: vraagt bevestiging bij een push naar main/master/de standaard-branch van een PendraStudio-repo.
 # Doorzetten zonder vraag (bijv. vanuit Claude Code ná akkoord):  PENDRA_MAIN_OK=1 git push
 REMOTE_URL="$2"
 INPUT=$(cat)
@@ -13,8 +13,10 @@ case "$REMOTE_URL" in
 esac
 
 HIT=""
+DEFB=$(git symbolic-ref --short "refs/remotes/$1/HEAD" 2>/dev/null | sed "s#^$1/##")
 while read -r lref lsha rref rsha; do
-  case "$rref" in refs/heads/main|refs/heads/master) HIT="${rref#refs/heads/}";; esac
+  B="${rref#refs/heads/}"
+  case "$B" in main|master|"$DEFB") [ -n "$B" ] && HIT="$B";; esac
 done <<< "$INPUT"
 
 if [ -n "$HIT" ] && [ "${PENDRA_MAIN_OK:-}" != "1" ]; then

@@ -4,9 +4,11 @@
 #   - Pendra-blok in CLAUDE.md            → Claude weet: nooit direct naar main, eerst vragen, eigenaar als reviewer
 # Alles via de GitHub-API met [skip ci]: er wordt niets gedeployd.
 #
-# Gebruik: pendra-eigenaar <repo> [github-gebruiker]     (standaard: jijzelf)
+# Gebruik: pendra-eigenaar <repo> [github-gebruiker]          (persoonlijk; standaard: jijzelf)
+#          pendra-eigenaar <repo> team[:aanspreekpunt]        (gedeeld eigendom van het hele team)
 set -uo pipefail
 ORG="PendraStudio"; R="${1:?repo-naam}"; OWNER="${2:-$(gh api user -q .login)}"
+TEAM_MEMBERS="Quentin-Pendra arthur-pendra CCPendra"
 MARK="<!-- pendra-hq -->"
 DEF=$(gh repo view "$ORG/$R" --json defaultBranchRef -q .defaultBranchRef.name) || { echo "  ✗ $R bestaat niet"; exit 1; }
 HAS_DEPLOY=0; gh api "repos/$ORG/$R/contents/.github/workflows/deploy.yml?ref=$DEF" >/dev/null 2>&1 && HAS_DEPLOY=1
@@ -16,11 +18,27 @@ case "$R" in
   *) [ $HAS_DEPLOY = 1 ] && EFFECT="Mergen of pushen naar \`$DEF\` zet de productie-versie op Vercel live." || EFFECT="\`$DEF\` is de hoofdversie van dit project." ;;
 esac
 
+case "$OWNER" in
+  team*)
+    CONTACT="${OWNER#team}"; CONTACT="${CONTACT#:}"
+    CO_OWNERS=$(for u in $TEAM_MEMBERS; do printf '@%s ' "$u"; done)
+    WHO="**Eigendom: gedeeld (hele Pendra-team)**${CONTACT:+, aanspreekpunt @$CONTACT}. Wijzigingen naar \`$DEF\` alleen na review door een teamgenoot."
+    REVIEW="voeg een teamgenoot toe als reviewer${CONTACT:+ (bij voorkeur @$CONTACT)}: \`gh pr create --fill --reviewer ${CONTACT:-<teamgenoot>}\`"
+    ASK="Eigendom: gedeeld${CONTACT:+, aanspreekpunt @$CONTACT}"
+    LABEL="team${CONTACT:+ (aanspreekpunt @$CONTACT)}";;
+  *)
+    CO_OWNERS="@$OWNER"
+    WHO="**Eigenaar: @$OWNER**, heeft dit project gestart en beslist wat er naar \`$DEF\` gaat."
+    REVIEW="ben je niet de eigenaar, voeg dan de eigenaar toe als reviewer: \`gh pr create --fill --reviewer $OWNER\`"
+    ASK="Eigenaar: @$OWNER"
+    LABEL="@$OWNER";;
+esac
+
 BLOCK="$MARK
 ## Pendra: eigenaar en werkwijze
-- **Eigenaar: @$OWNER**, heeft dit project gestart en beslist wat er naar \`$DEF\` gaat.
-- **Nooit direct naar \`$DEF\` pushen.** Werk op een branch en open een pull request. Ben je niet de eigenaar, voeg dan de eigenaar toe als reviewer: \`gh pr create --fill --reviewer $OWNER\`.
-- $EFFECT Vraag daarom **altijd eerst expliciet**: *\"Wil je dit naar \`$DEF\` zetten? Dat gaat live. Eigenaar: @$OWNER.\"* Pas na een duidelijk ja mergen.
+- $WHO
+- **Nooit direct naar \`$DEF\` pushen.** Werk op een branch en open een pull request; $REVIEW.
+- $EFFECT Vraag daarom **altijd eerst expliciet**: *\"Wil je dit naar \`$DEF\` zetten?$([ $HAS_DEPLOY = 1 ] && echo \" Dat gaat live.\") $ASK.\"* Pas na een duidelijk ja mergen.
 - Een push naar \`$DEF\` wordt lokaal tegengehouden door de Pendra-check; bewust doorzetten kan met \`PENDRA_MAIN_OK=1 git push\`.
 - Deploy loopt via GitHub Actions naar Vercel \`pendra-hq\` (skill \`pendra-hq\`). Nooit Git koppelen in Vercel."
 
@@ -42,10 +60,10 @@ old, mark, block = os.environ['OLD'], os.environ['MARK'], os.environ['BLOCK']
 base = old.split(mark)[0].rstrip() if mark in old else old.rstrip()
 print((base + '\n\n' if base else '') + block)")
 if [ "$NEWMD" != "$OLD" ]; then put CLAUDE.md "$NEWMD
-" "Pendra: eigenaar @$OWNER en werkwijze naar $DEF [skip ci]" && echo "  ✓ $R: CLAUDE.md (eigenaar @$OWNER)"; fi
+" "Pendra: eigenaar $LABEL en werkwijze naar $DEF [skip ci]" && echo "  ✓ $R: CLAUDE.md (eigenaar $LABEL)"; fi
 
 # CODEOWNERS
-CO="# Eigenaar van dit project (Pendra). Wordt automatisch gevraagd als reviewer.
-* @$OWNER
+CO="# Eigenaar van dit project (Pendra): $LABEL. Wordt automatisch gevraagd als reviewer.
+* $CO_OWNERS
 "
-put .github/CODEOWNERS "$CO" "Pendra: CODEOWNERS @$OWNER [skip ci]" && echo "  ✓ $R: CODEOWNERS"
+put .github/CODEOWNERS "$CO" "Pendra: CODEOWNERS $LABEL [skip ci]" && echo "  ✓ $R: CODEOWNERS"
