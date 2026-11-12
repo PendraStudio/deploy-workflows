@@ -3,10 +3,18 @@
 set -e
 DIR="$(cd "$(dirname "$0")" && pwd)"
 mkdir -p "$HOME/.local/bin"
-for c in pendra-project pendra-verhuis pendra-accepteer; do ln -sf "$DIR/$c.sh" "$HOME/.local/bin/$c"; echo "✓ $c"; done
+for c in pendra-project pendra-verhuis pendra-accepteer pendra-eigenaar; do ln -sf "$DIR/$c.sh" "$HOME/.local/bin/$c"; echo "✓ $c"; done
 case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *)
   echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
   echo "✓ ~/.local/bin aan je PATH toegevoegd (open een nieuw Terminal-venster)";; esac
+# Git-check: vraagt bevestiging bij een push naar main van een PendraStudio-repo
+HOOKS="$(cd "$DIR/.." && pwd)/hooks"
+CURH=$(git config --global --get core.hooksPath || true)
+if [ -z "$CURH" ] || [ "$CURH" = "$HOOKS" ]; then
+  git config --global core.hooksPath "$HOOKS" && echo "✓ git-check voor main-pushes (bestaande repo-hooks blijven werken)"
+else
+  echo "! je hebt al een globale core.hooksPath ($CURH); kopieer $HOOKS/pre-push daar zelf naartoe"
+fi
 # Claude Code-skill
 mkdir -p "$HOME/.claude/skills"
 SKILL="$(cd "$DIR/.." && pwd)/skills/pendra-hq"

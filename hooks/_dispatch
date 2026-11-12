@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Pendra: globale hooks-map. Voert de eigen hook van de repo (.git/hooks/<naam>) gewoon uit,
+# zodat bestaande hooks blijven werken. Alleen pre-push heeft daarnaast de Pendra-check.
+NAME=$(basename "$0")
+GITDIR=$(git rev-parse --git-common-dir 2>/dev/null) || exit 0
+LOCAL="$GITDIR/hooks/$NAME"
+[ -x "$LOCAL" ] && exec "$LOCAL" "$@"
+exit 0

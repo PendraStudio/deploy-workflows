@@ -56,7 +56,7 @@ if gh repo view "$ORG/$NAME" >/dev/null 2>&1; then
   git remote get-url origin >/dev/null 2>&1 || git remote add origin "https://github.com/$ORG/$NAME.git"
 else
   git remote remove origin 2>/dev/null || true
-  gh repo create "$ORG/$NAME" --private --source . --remote origin --push >/dev/null && ok "repo $ORG/$NAME aangemaakt (privé) en gepusht"
+  PENDRA_MAIN_OK=1 gh repo create "$ORG/$NAME" --private --source . --remote origin --push >/dev/null && ok "repo $ORG/$NAME aangemaakt (privé) en gepusht"
 fi
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
@@ -98,14 +98,13 @@ else
   # alleen dit bestand (en .gitignore) committen, andere wijzigingen blijven staan
   git add .github/workflows/deploy.yml .gitignore
   git commit -q -m "Deploy via GitHub Actions (PendraHQ) [skip ci]" -- .github/workflows/deploy.yml .gitignore
-  git push -q origin "$BRANCH" && ok "toegevoegd en gepusht (zonder deploy)"
+  PENDRA_MAIN_OK=1 git push -q origin "$BRANCH" && ok "toegevoegd en gepusht (zonder deploy)"
 fi
 
-# ---------- CLAUDE.md voor live- ----------
-case "$NAME" in live-*)
-  bash "$(dirname "$(readlink "$0" || echo "$0")")/pendra-claudemd.sh" "$NAME"
-  git pull -q --ff-only origin "$BRANCH" 2>/dev/null || echo "  ! haal CLAUDE.md lokaal binnen met: git pull";;
-esac
+# ---------- eigenaar + werkwijze (CODEOWNERS + CLAUDE.md) ----------
+say "Eigenaar vastleggen"
+bash "$(dirname "$(readlink "$0" || echo "$0")")/pendra-eigenaar.sh" "$NAME"
+git pull -q --ff-only origin "$BRANCH" 2>/dev/null || echo "  ! haal CLAUDE.md/CODEOWNERS lokaal binnen met: git pull"
 
 # ---------- preview ----------
 if [ "$PREVIEW" = 1 ]; then

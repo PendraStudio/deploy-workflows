@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# Pendra-check: vraagt bevestiging bij een push naar main/master van een PendraStudio-repo.
+# Doorzetten zonder vraag (bijv. vanuit Claude Code ná akkoord):  PENDRA_MAIN_OK=1 git push
+REMOTE_URL="$2"
+INPUT=$(cat)
+GITDIR=$(git rev-parse --git-common-dir 2>/dev/null)
+
+run_local() { [ -x "$GITDIR/hooks/pre-push" ] && { printf '%s' "$INPUT" | "$GITDIR/hooks/pre-push" "$@" || exit $?; }; return 0; }
+
+case "$REMOTE_URL" in
+  *github.com[:/]PendraStudio/*) ;;
+  *) run_local "$@"; exit 0;;
+esac
+
+HIT=""
+while read -r lref lsha rref rsha; do
+  case "$rref" in refs/heads/main|refs/heads/master) HIT="${rref#refs/heads/}";; esac
+done <<< "$INPUT"
+
+if [ -n "$HIT" ] && [ "${PENDRA_MAIN_OK:-}" != "1" ]; then
+  REPO=$(printf '%s' "$REMOTE_URL" | sed -E 's#.*PendraStudio/##; s#\.git$##')
+  OWNER=$(git show "HEAD:.github/CODEOWNERS" 2>/dev/null | awk '/^\*/{print $2; exit}')
+  ME=$(git config user.name)
+  case "$REPO" in live-*) WAT="Dit zet de site DIRECT LIVE bij de klant.";; *) WAT="Dit zet de productie-versie live.";; esac
+  MSG="
+  ┌─ Pendra ─────────────────────────────────────────────
+  │ Je pusht direct naar '$HIT' van PendraStudio/$REPO.
+  │ $WAT
+  │ Eigenaar: ${OWNER:-onbekend}   ·   jij: $ME
+  │ Normaal: branch + pull request (gh pr create --fill${OWNER:+ --reviewer ${OWNER#@}}).
+  └──────────────────────────────────────────────────────"
+  if [ -t 2 ] && [ -r /dev/tty ] && [ -w /dev/tty ]; then
+    printf '%s\n  Toch direct naar %s pushen? (j/N) ' "$MSG" "$HIT" > /dev/tty
+    read -r ANS < /dev/tty
+    case "$ANS" in j|J|ja|Ja|y|Y) ;; *) echo "  Gestopt, er is niets gepusht." > /dev/tty; exit 1;; esac
+  else
+    printf '%s\n  Geblokkeerd: geen bevestiging mogelijk. Vraag het eerst en push dan met PENDRA_MAIN_OK=1 git push\n' "$MSG" >&2
+    exit 1
+  fi
+fi
+run_local "$@"
