@@ -23,11 +23,14 @@ description: Pendra-workflow voor GitHub (PendraStudio) en Vercel (team pendra-h
 Gebruik altijd deze scripts; niet zelf repo's, Vercel-projecten, secrets of workflows met de hand opzetten. Ze slaan over wat al klopt.
 
 ## Eigenaar en main (altijd)
-- Elke repo heeft een **eigenaar** (wie hem gestart heeft): staat in `.github/CODEOWNERS` (`* @gebruiker`) en in het Pendra-blok van `CLAUDE.md`. Lees die eerst.
+- Elke repo heeft een **eigenaar**: staat in `.github/CODEOWNERS` en in het Pendra-blok van `CLAUDE.md`. Lees die eerst. Twee soorten:
+  - **persoonlijk** (`* @gebruiker`): wie het project startte beslist wat naar de hoofdbranch gaat;
+  - **gedeeld** (`* @Quentin-Pendra @arthur-pendra @CCPendra`, met een aanspreekpunt): van het hele team, zoals de Rust-repo's (aanspreekpunt @arthur-pendra). Review door een teamgenoot.
+- De hoofdbranch is niet altijd `main` (Rust-repo's: `pendra`). Kijk naar de standaard-branch van de repo.
 - **Nooit direct naar `main`/`master` pushen.** Altijd: branch → `gh pr create --fill` → is de gebruiker niet de eigenaar, dan `--reviewer <eigenaar>` toevoegen.
 - **Voor elke merge/push naar main expliciet vragen**, met de eigenaar erbij: *"Wil je dit naar main zetten? Dat gaat live. Eigenaar: @x."* Alleen na een duidelijk ja.
 - De lokale Pendra git-check blokkeert pushes naar main van PendraStudio-repo's als er geen terminal is om te bevestigen (zoals in Claude Code). Na het akkoord van de gebruiker: `PENDRA_MAIN_OK=1 git push`. Nooit zonder akkoord omzeilen.
-- Nieuwe repo of verhuisde repo: `pendra-project`/`pendra-verhuis` zetten de eigenaar automatisch (de gebruiker die het script draait). Handmatig: `pendra-eigenaar <repo> [gebruiker]`.
+- Nieuwe repo of verhuisde repo: `pendra-project`/`pendra-verhuis` zetten de eigenaar automatisch (de gebruiker die het script draait). Handmatig: `pendra-eigenaar <repo> [gebruiker]` of gedeeld: `pendra-eigenaar <repo> team:<aanspreekpunt>`.
 
 ## Aan een bestaand project werken
 `gh repo clone PendraStudio/<repo>` → `npm install && npm run dev` → `git checkout -b <branch>` → commit/push → `gh pr create --fill` (preview-link verschijnt als PR-reactie) → merge naar main = live. Env vars lokaal: `vercel link --yes --project <repo> --scope pendra-hq && vercel env pull .env.local` (vercel als pendrahq). Geen Vercel-lidmaatschap nodig.
