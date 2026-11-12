@@ -22,6 +22,9 @@ description: Pendra-workflow voor GitHub (PendraStudio) en Vercel (team pendra-h
 
 Gebruik altijd deze scripts; niet zelf repo's, Vercel-projecten, secrets of workflows met de hand opzetten. Ze slaan over wat al klopt.
 
+## Aan een bestaand project werken
+`gh repo clone PendraStudio/<repo>` → `npm install && npm run dev` → `git checkout -b <branch>` → commit/push → `gh pr create --fill` (preview-link verschijnt als PR-reactie) → merge naar main = live. Env vars lokaal: `vercel link --yes --project <repo> --scope pendra-hq && vercel env pull .env.local` (vercel als pendrahq). Geen Vercel-lidmaatschap nodig.
+
 ## Naamgeving
 `live-` klantsite met domein (main = productie bij de klant) · `pendra-` eigen product/tool · `lab-` experiment/mirror/oude versie. Repo-naam == Vercel-projectnaam. Twijfel → één keer vragen, anders `lab-`.
 
